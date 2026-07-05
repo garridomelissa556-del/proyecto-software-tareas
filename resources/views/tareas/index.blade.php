@@ -6,8 +6,8 @@
             </h2>
 
             <a href="{{ route('tareas.create') }}"
-               class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg">
-                + Nueva tarea
+class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition"
+            + Nueva tarea
             </a>
         </div>
     </x-slot>
@@ -25,7 +25,7 @@
 
                 <table class="min-w-full divide-y divide-gray-200">
 
-                    <thead class="bg-gray-100">
+                    <thead class="bg-slate-100">
                         <tr>
 
                             <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">
@@ -55,7 +55,7 @@
 
                         @forelse($tareas as $tarea)
 
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-slate-50">
 
                                 <td class="px-6 py-4">
                                     {{ $tarea->titulo }}
@@ -118,12 +118,12 @@
                                     <div class="flex justify-center gap-2">
 
                                         <a href="{{ route('tareas.show', $tarea) }}"
-                                           class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded">
+                                           class="bg-sky-600 hover:bg-sky-700 text-white px-3 py-1 rounded">
                                             Ver
                                         </a>
 
                                         <a href="{{ route('tareas.edit', $tarea) }}"
-                                           class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">
+                                           class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded">
                                             Editar
                                         </a>
 
