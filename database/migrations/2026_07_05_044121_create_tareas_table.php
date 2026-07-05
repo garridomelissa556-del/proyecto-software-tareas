@@ -13,9 +13,28 @@ return new class extends Migration
     {
         Schema::create('tareas', function (Blueprint $table) {
             $table->id();
+
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+
             $table->string('titulo');
             $table->text('descripcion')->nullable();
-            $table->boolean('completada')->default(false);
+
+            $table->enum('estado', [
+                'Pendiente',
+                'En progreso',
+                'Completada'
+            ])->default('Pendiente');
+
+            $table->date('fecha_limite')->nullable();
+
+            $table->enum('prioridad', [
+                'Baja',
+                'Media',
+                'Alta'
+            ])->default('Media');
+
             $table->timestamps();
         });
     }
