@@ -6,9 +6,9 @@
             </h2>
 
             <a href="{{ route('tareas.create') }}"
-class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition"
-            + Nueva tarea
-            </a>
+   class="inline-flex items-center px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition">
+    + Nueva tarea
+</a>
         </div>
     </x-slot>
 
