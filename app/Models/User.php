@@ -50,8 +50,8 @@ class User extends Authenticatable
     /**
  * Un usuario puede tener muchas tareas.
  */
-public function tareas(): HasMany
-{
-    return $this->hasMany(Tarea::class);
-}
+public function tareas(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Tarea::class);
+    }
 }

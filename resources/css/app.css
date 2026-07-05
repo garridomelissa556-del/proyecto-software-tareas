@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.progress-ring {
+    --percent: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: conic-gradient(#6C5CE7 calc(var(--percent) * 1%), #E7E3F5 0);
+}
+
+.progress-ring::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 9999px;
+    background: #FFFFFF;
+}
+
+.progress-ring span {
+    position: relative;
+    z-index: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #211C3A;
+}

@@ -14,10 +14,13 @@ class TareaController extends Controller
     public function index()
     {
         $tareas = Tarea::where('user_id', Auth::id())
-    ->orderBy('fecha_limite')
-    ->paginate(10);
+            ->orderBy('fecha_limite')
+            ->paginate(10);
 
-        return view('tareas.index', compact('tareas'));
+        $totalTareas = Tarea::where('user_id', Auth::id())->count();
+        $completadas = Tarea::where('user_id', Auth::id())->where('estado', 'Completada')->count();
+
+        return view('tareas.index', compact('tareas', 'totalTareas', 'completadas'));
     }
 
     /**
