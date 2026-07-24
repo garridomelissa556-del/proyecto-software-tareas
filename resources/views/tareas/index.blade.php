@@ -34,6 +34,59 @@
                 </div>
             @endif
 
+            <form method="GET" action="{{ route('tareas.index') }}"
+                  class="bg-white rounded-lg shadow-sm p-4 mb-4 flex flex-wrap items-end gap-3">
+
+                <div class="flex-1 min-w-[180px]">
+                    <label class="block text-xs font-medium text-ink/60 mb-1">Buscar</label>
+                    <input type="text" name="buscar" value="{{ request('buscar') }}" placeholder="Título o descripción..."
+                        class="w-full rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-ink/60 mb-1">Estado</label>
+                    <select name="estado" class="rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
+                        <option value="">Todos</option>
+                        <option value="Pendiente" {{ request('estado') == 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
+                        <option value="En progreso" {{ request('estado') == 'En progreso' ? 'selected' : '' }}>En progreso</option>
+                        <option value="Completada" {{ request('estado') == 'Completada' ? 'selected' : '' }}>Completada</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-ink/60 mb-1">Prioridad</label>
+                    <select name="prioridad" class="rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
+                        <option value="">Todas</option>
+                        <option value="Alta" {{ request('prioridad') == 'Alta' ? 'selected' : '' }}>Alta</option>
+                        <option value="Media" {{ request('prioridad') == 'Media' ? 'selected' : '' }}>Media</option>
+                        <option value="Baja" {{ request('prioridad') == 'Baja' ? 'selected' : '' }}>Baja</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-ink/60 mb-1">Ordenar por</label>
+                    <select name="orden" class="rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
+                        <option value="fecha_limite" {{ request('orden', 'fecha_limite') == 'fecha_limite' ? 'selected' : '' }}>Fecha límite</option>
+                        <option value="prioridad" {{ request('orden') == 'prioridad' ? 'selected' : '' }}>Prioridad</option>
+                        <option value="reciente" {{ request('orden') == 'reciente' ? 'selected' : '' }}>Más reciente</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-2">
+                    <button type="submit"
+                        class="px-4 py-2 bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg shadow text-sm">
+                        Filtrar
+                    </button>
+                    @if(request()->anyFilled(['buscar', 'estado', 'prioridad']) || request('orden'))
+                        <a href="{{ route('tareas.index') }}"
+                            class="px-4 py-2 text-ink/60 hover:text-ink font-medium text-sm">
+                            Limpiar
+                        </a>
+                    @endif
+                </div>
+
+            </form>
+
             <div class="space-y-3">
 
                 @forelse($tareas as $tarea)
@@ -80,8 +133,13 @@
                 @empty
 
                     <div class="bg-white rounded-lg shadow-sm px-6 py-12 text-center">
-                        <p class="font-display text-lg text-ink">Aún no tienes tareas</p>
-                        <p class="text-ink/60 mt-1">Crea la primera y empieza a tachar pendientes ✓</p>
+                        @if(request()->anyFilled(['buscar', 'estado', 'prioridad']))
+                            <p class="font-display text-lg text-ink">Ninguna tarea coincide con esos filtros</p>
+                            <p class="text-ink/60 mt-1">Prueba con otros criterios o límpialos</p>
+                        @else
+                            <p class="font-display text-lg text-ink">Aún no tienes tareas</p>
+                            <p class="text-ink/60 mt-1">Crea la primera y empieza a tachar pendientes ✓</p>
+                        @endif
                     </div>
 
                 @endforelse

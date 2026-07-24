@@ -11,11 +11,25 @@ class TareaController extends Controller
     /**
      * Mostrar todas las tareas del usuario autenticado.
      */
-    public function index()
+    public function index(Request $request)
     {
+        $orden = $request->input('orden', 'fecha_limite');
+
         $tareas = Tarea::where('user_id', Auth::id())
-            ->orderBy('fecha_limite')
-            ->paginate(10);
+            ->buscar($request->input('buscar'))
+            ->deEstado($request->input('estado'))
+            ->dePrioridad($request->input('prioridad'))
+            ->when($orden === 'prioridad', function ($q) {
+                $q->orderByRaw("CASE prioridad WHEN 'Alta' THEN 1 WHEN 'Media' THEN 2 WHEN 'Baja' THEN 3 END");
+            })
+            ->when($orden === 'reciente', function ($q) {
+                $q->orderBy('created_at', 'desc');
+            })
+            ->when(! in_array($orden, ['prioridad', 'reciente']), function ($q) {
+                $q->orderBy('fecha_limite');
+            })
+            ->paginate(10)
+            ->withQueryString();
 
         $totalTareas = Tarea::where('user_id', Auth::id())->count();
         $completadas = Tarea::where('user_id', Auth::id())->where('estado', 'Completada')->count();

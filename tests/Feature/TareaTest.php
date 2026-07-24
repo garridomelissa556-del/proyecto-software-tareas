@@ -160,7 +160,7 @@ test('un usuario no puede eliminar la tarea de otro usuario', function () {
     $this->assertDatabaseHas('tareas', ['id' => $tarea->id]);
 });
 
-test('un usuario autenticado puede ver el listado de sus tareas', function () {
+test('un usuario autenticado puede ver tareas con distintos estados en el listado', function () {
     $user = User::factory()->create();
     Tarea::factory()->create(['user_id' => $user->id, 'estado' => 'Pendiente']);
     Tarea::factory()->create(['user_id' => $user->id, 'estado' => 'En progreso']);
@@ -170,4 +170,76 @@ test('un usuario autenticado puede ver el listado de sus tareas', function () {
 
     $response->assertOk();
     $response->assertSee('Pendiente');
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE BÚSQUEDA, FILTROS Y ORDEN (V1.1)
+// -----------------------------------------------------------------
+
+test('el listado se puede filtrar por estado', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea pendiente', 'estado' => 'Pendiente']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea completada', 'estado' => 'Completada']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['estado' => 'Completada']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea completada');
+    $response->assertDontSee('Tarea pendiente');
+});
+
+test('el listado se puede filtrar por prioridad', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea alta', 'prioridad' => 'Alta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea baja', 'prioridad' => 'Baja']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['prioridad' => 'Alta']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea alta');
+    $response->assertDontSee('Tarea baja');
+});
+
+test('el listado se puede buscar por texto en el titulo o la descripcion', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Estudiar para el examen', 'descripcion' => 'Repasar apuntes']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Comprar víveres', 'descripcion' => 'Ir al mercado']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['buscar' => 'examen']));
+
+    $response->assertOk();
+    $response->assertSee('Estudiar para el examen');
+    $response->assertDontSee('Comprar víveres');
+});
+
+test('los filtros solo aplican sobre las tareas del usuario autenticado', function () {
+    $user = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea propia', 'estado' => 'Pendiente']);
+    Tarea::factory()->create(['user_id' => $otroUsuario->id, 'titulo' => 'Tarea ajena', 'estado' => 'Pendiente']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['estado' => 'Pendiente']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea propia');
+    $response->assertDontSee('Tarea ajena');
+});
+
+test('el listado se puede ordenar por prioridad de mayor a menor', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea baja', 'prioridad' => 'Baja']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea alta', 'prioridad' => 'Alta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea media', 'prioridad' => 'Media']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['orden' => 'prioridad']));
+
+    $response->assertOk();
+    $contenido = $response->getContent();
+
+    $posicionAlta = strpos($contenido, 'Tarea alta');
+    $posicionMedia = strpos($contenido, 'Tarea media');
+    $posicionBaja = strpos($contenido, 'Tarea baja');
+
+    expect($posicionAlta)->toBeLessThan($posicionMedia);
+    expect($posicionMedia)->toBeLessThan($posicionBaja);
 });
