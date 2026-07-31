@@ -73,7 +73,7 @@ test('un usuario autenticado puede eliminar su tarea', function () {
     $response = $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
 
     $response->assertRedirect(route('tareas.index'));
-    $this->assertDatabaseMissing('tareas', ['id' => $tarea->id]);
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
 });
 
 // -----------------------------------------------------------------
@@ -242,4 +242,86 @@ test('el listado se puede ordenar por prioridad de mayor a menor', function () {
 
     expect($posicionAlta)->toBeLessThan($posicionMedia);
     expect($posicionMedia)->toBeLessThan($posicionBaja);
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE PAPELERA DE RECICLAJE (V1.2)
+// -----------------------------------------------------------------
+
+test('al eliminar una tarea esta no se borra de la base de datos sino que se marca como eliminada', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
+
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+test('una tarea eliminada no aparece en el listado principal', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Organizar el armario']);
+
+    $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
+
+    $response = $this->actingAs($user)->get(route('tareas.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('Organizar el armario');
+});
+
+test('un usuario autenticado puede ver sus tareas eliminadas en la papelera', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea en papelera']);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->get(route('tareas.papelera'));
+
+    $response->assertOk();
+    $response->assertSee('Tarea en papelera');
+});
+
+test('un usuario autenticado puede restaurar una tarea eliminada', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->patch(route('tareas.restaurar', $tarea->id));
+
+    $response->assertRedirect(route('tareas.papelera'));
+    $this->assertDatabaseHas('tareas', ['id' => $tarea->id, 'deleted_at' => null]);
+});
+
+test('un usuario autenticado puede eliminar una tarea de forma definitiva desde la papelera', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->delete(route('tareas.forzar', $tarea->id));
+
+    $response->assertRedirect(route('tareas.papelera'));
+    $this->assertDatabaseMissing('tareas', ['id' => $tarea->id]);
+});
+
+test('un usuario no puede restaurar la tarea eliminada de otro usuario', function () {
+    $propietario = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $propietario->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($otroUsuario)->patch(route('tareas.restaurar', $tarea->id));
+
+    $response->assertForbidden();
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+test('un usuario no puede eliminar de forma definitiva la tarea de otro usuario', function () {
+    $propietario = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $propietario->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($otroUsuario)->delete(route('tareas.forzar', $tarea->id));
+
+    $response->assertForbidden();
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
 });

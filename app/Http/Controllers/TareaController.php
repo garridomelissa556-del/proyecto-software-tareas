@@ -122,4 +122,49 @@ class TareaController extends Controller
             ->route('tareas.index')
             ->with('success', 'Tarea eliminada correctamente.');
     }
+
+    /**
+     * Mostrar las tareas eliminadas del usuario autenticado.
+     */
+    public function papelera()
+    {
+        $tareas = Tarea::onlyTrashed()
+            ->where('user_id', Auth::id())
+            ->orderBy('deleted_at', 'desc')
+            ->paginate(10);
+
+        return view('tareas.papelera', compact('tareas'));
+    }
+
+    /**
+     * Restaurar una tarea eliminada.
+     */
+    public function restaurar(string $id)
+    {
+        $tarea = Tarea::onlyTrashed()->findOrFail($id);
+
+        abort_if($tarea->user_id !== Auth::id(), 403);
+
+        $tarea->restore();
+
+        return redirect()
+            ->route('tareas.papelera')
+            ->with('success', 'Tarea restaurada correctamente.');
+    }
+
+    /**
+     * Eliminar una tarea de forma definitiva.
+     */
+    public function forzarEliminacion(string $id)
+    {
+        $tarea = Tarea::onlyTrashed()->findOrFail($id);
+
+        abort_if($tarea->user_id !== Auth::id(), 403);
+
+        $tarea->forceDelete();
+
+        return redirect()
+            ->route('tareas.papelera')
+            ->with('success', 'Tarea eliminada de forma definitiva.');
+    }
 }

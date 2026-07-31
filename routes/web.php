@@ -22,6 +22,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [TareaController::class, 'index'])
         ->name('dashboard');
 
+    // Papelera de tareas eliminadas
+    Route::get('/tareas-papelera', [TareaController::class, 'papelera'])
+        ->name('tareas.papelera');
+    Route::patch('/tareas/{id}/restaurar', [TareaController::class, 'restaurar'])
+        ->name('tareas.restaurar');
+    Route::delete('/tareas/{id}/forzar', [TareaController::class, 'forzarEliminacion'])
+        ->name('tareas.forzar');
+
     // CRUD de tareas
     Route::resource('tareas', TareaController::class);
 
