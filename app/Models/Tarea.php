@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tarea extends Model
@@ -32,6 +33,11 @@ class Tarea extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function etiquetas(): BelongsToMany
+    {
+        return $this->belongsToMany(Etiqueta::class, 'etiqueta_tarea');
+    }
+
     public function scopeBuscar($query, ?string $texto)
     {
         return $query->when($texto, function ($q) use ($texto) {
@@ -50,5 +56,13 @@ class Tarea extends Model
     public function scopeDePrioridad($query, ?string $prioridad)
     {
         return $query->when($prioridad, fn ($q) => $q->where('prioridad', $prioridad));
+    }
+
+    public function scopeDeEtiqueta($query, ?string $etiquetaId)
+    {
+        return $query->when(
+            $etiquetaId,
+            fn ($q) => $q->whereHas('etiquetas', fn ($q) => $q->where('etiquetas.id', $etiquetaId))
+        );
     }
 }

@@ -58,6 +58,29 @@
                         @error('fecha_limite') <p class="text-coral text-sm mt-1">{{ $message }}</p> @enderror
                     </div>
 
+                    <div class="mb-8">
+                        <label class="block text-sm font-medium text-ink mb-2">Etiquetas</label>
+
+                        @if($etiquetas->isEmpty())
+                            <p class="text-sm text-ink/60">
+                                No tienes etiquetas todavía.
+                                <a href="{{ route('etiquetas.create') }}" class="text-brand hover:text-brand-dark font-medium">Crea una</a>.
+                            </p>
+                        @else
+                            <div class="flex flex-wrap gap-3">
+                                @foreach($etiquetas as $etiqueta)
+                                    <label class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-line cursor-pointer">
+                                        <input type="checkbox" name="etiquetas[]" value="{{ $etiqueta->id }}"
+                                            {{ collect(old('etiquetas'))->contains($etiqueta->id) ? 'checked' : '' }}>
+                                        <span class="w-2.5 h-2.5 rounded-full inline-block" style="background-color: {{ $etiqueta->color }}"></span>
+                                        <span class="text-sm text-ink">{{ $etiqueta->nombre }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                        @error('etiquetas') <p class="text-coral text-sm mt-1">{{ $message }}</p> @enderror
+                    </div>
+
                     <div class="flex justify-end gap-3">
                         <a href="{{ route('tareas.index') }}" class="px-4 py-2 text-ink/60 hover:text-ink font-medium">Cancelar</a>
                         <button type="submit" class="px-5 py-2 bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg shadow">Guardar</button>

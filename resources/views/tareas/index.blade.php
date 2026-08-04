@@ -64,6 +64,16 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-medium text-ink/60 mb-1">Etiqueta</label>
+                    <select name="etiqueta" class="rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
+                        <option value="">Todas</option>
+                        @foreach($etiquetas as $etiqueta)
+                            <option value="{{ $etiqueta->id }}" {{ request('etiqueta') == $etiqueta->id ? 'selected' : '' }}>{{ $etiqueta->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-xs font-medium text-ink/60 mb-1">Ordenar por</label>
                     <select name="orden" class="rounded-lg border-line focus:border-brand focus:ring-brand text-sm">
                         <option value="fecha_limite" {{ request('orden', 'fecha_limite') == 'fecha_limite' ? 'selected' : '' }}>Fecha límite</option>
@@ -77,7 +87,7 @@
                         class="px-4 py-2 bg-brand hover:bg-brand-dark text-white font-semibold rounded-lg shadow text-sm">
                         Filtrar
                     </button>
-                    @if(request()->anyFilled(['buscar', 'estado', 'prioridad']) || request('orden'))
+                    @if(request()->anyFilled(['buscar', 'estado', 'prioridad', 'etiqueta']) || request('orden'))
                         <a href="{{ route('tareas.index') }}"
                             class="px-4 py-2 text-ink/60 hover:text-ink font-medium text-sm">
                             Limpiar
@@ -106,6 +116,16 @@
                             <p class="text-sm text-ink/60 font-mono mt-1">
                                 {{ $tarea->fecha_limite ? $tarea->fecha_limite->format('d/m/Y') : 'Sin fecha' }}
                             </p>
+                            @if($tarea->etiquetas->isNotEmpty())
+                                <div class="flex flex-wrap gap-1.5 mt-2">
+                                    @foreach($tarea->etiquetas as $etiqueta)
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium"
+                                              style="background-color: {{ $etiqueta->color }}1a; color: {{ $etiqueta->color }}">
+                                            {{ $etiqueta->nombre }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
 
                         <div class="flex items-center gap-3">
@@ -133,7 +153,7 @@
                 @empty
 
                     <div class="bg-white rounded-lg shadow-sm px-6 py-12 text-center">
-                        @if(request()->anyFilled(['buscar', 'estado', 'prioridad']))
+                        @if(request()->anyFilled(['buscar', 'estado', 'prioridad', 'etiqueta']))
                             <p class="font-display text-lg text-ink">Ninguna tarea coincide con esos filtros</p>
                             <p class="text-ink/60 mt-1">Prueba con otros criterios o límpialos</p>
                         @else

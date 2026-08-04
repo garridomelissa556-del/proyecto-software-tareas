@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Etiqueta;
 use App\Models\Tarea;
 use App\Models\User;
 
@@ -324,4 +325,75 @@ test('un usuario no puede eliminar de forma definitiva la tarea de otro usuario'
 
     $response->assertForbidden();
     $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE ETIQUETAS (V1.3)
+// -----------------------------------------------------------------
+
+test('al crear una tarea se le pueden asignar etiquetas', function () {
+    $user = User::factory()->create();
+    $etiqueta1 = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $etiqueta2 = Etiqueta::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->post(route('tareas.store'), [
+        'titulo' => 'Tarea con etiquetas',
+        'estado' => 'Pendiente',
+        'prioridad' => 'Media',
+        'etiquetas' => [$etiqueta1->id, $etiqueta2->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea = Tarea::where('titulo', 'Tarea con etiquetas')->firstOrFail();
+    expect($tarea->etiquetas)->toHaveCount(2);
+});
+
+test('al actualizar una tarea se pueden cambiar las etiquetas asignadas', function () {
+    $user = User::factory()->create();
+    $etiquetaVieja = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $etiquetaNueva = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->etiquetas()->sync([$etiquetaVieja->id]);
+
+    $response = $this->actingAs($user)->put(route('tareas.update', $tarea), [
+        'titulo' => $tarea->titulo,
+        'estado' => $tarea->estado,
+        'prioridad' => $tarea->prioridad,
+        'etiquetas' => [$etiquetaNueva->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea->refresh();
+    expect($tarea->etiquetas->pluck('id')->all())->toBe([$etiquetaNueva->id]);
+});
+
+test('no se pueden asignar a una tarea etiquetas de otro usuario', function () {
+    $user = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $etiquetaAjena = Etiqueta::factory()->create(['user_id' => $otroUsuario->id]);
+
+    $response = $this->actingAs($user)->post(route('tareas.store'), [
+        'titulo' => 'Tarea sin etiquetas ajenas',
+        'estado' => 'Pendiente',
+        'prioridad' => 'Media',
+        'etiquetas' => [$etiquetaAjena->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea = Tarea::where('titulo', 'Tarea sin etiquetas ajenas')->firstOrFail();
+    expect($tarea->etiquetas)->toHaveCount(0);
+});
+
+test('el listado se puede filtrar por etiqueta', function () {
+    $user = User::factory()->create();
+    $etiqueta = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $tareaConEtiqueta = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Con etiqueta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Sin etiqueta']);
+    $tareaConEtiqueta->etiquetas()->sync([$etiqueta->id]);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['etiqueta' => $etiqueta->id]));
+
+    $response->assertOk();
+    $response->assertSee('Con etiqueta');
+    $response->assertDontSee('Sin etiqueta');
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EtiquetaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TareaController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // CRUD de tareas
     Route::resource('tareas', TareaController::class);
+
+    // CRUD de etiquetas
+    Route::resource('etiquetas', EtiquetaController::class)->except('show');
 
 });
 
