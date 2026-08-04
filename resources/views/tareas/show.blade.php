@@ -24,6 +24,20 @@
                     <p class="mt-2 text-ink">{{ $tarea->descripcion ?: 'Sin descripción.' }}</p>
                 </div>
 
+                @if($tarea->etiquetas->isNotEmpty())
+                    <div>
+                        <h3 class="text-xs font-mono uppercase tracking-wide text-ink/50">Etiquetas</h3>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            @foreach($tarea->etiquetas as $etiqueta)
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
+                                      style="background-color: {{ $etiqueta->color }}1a; color: {{ $etiqueta->color }}">
+                                    {{ $etiqueta->nombre }}
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+
                 <div class="flex gap-10">
                     <div>
                         <h3 class="text-xs font-mono uppercase tracking-wide text-ink/50">Estado</h3>

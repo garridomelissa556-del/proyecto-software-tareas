@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Etiqueta;
 use App\Models\Tarea;
 use App\Models\User;
 
@@ -73,7 +74,7 @@ test('un usuario autenticado puede eliminar su tarea', function () {
     $response = $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
 
     $response->assertRedirect(route('tareas.index'));
-    $this->assertDatabaseMissing('tareas', ['id' => $tarea->id]);
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
 });
 
 // -----------------------------------------------------------------
@@ -170,4 +171,229 @@ test('un usuario autenticado puede ver tareas con distintos estados en el listad
 
     $response->assertOk();
     $response->assertSee('Pendiente');
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE BÚSQUEDA, FILTROS Y ORDEN (V1.1)
+// -----------------------------------------------------------------
+
+test('el listado se puede filtrar por estado', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea pendiente', 'estado' => 'Pendiente']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea completada', 'estado' => 'Completada']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['estado' => 'Completada']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea completada');
+    $response->assertDontSee('Tarea pendiente');
+});
+
+test('el listado se puede filtrar por prioridad', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea alta', 'prioridad' => 'Alta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea baja', 'prioridad' => 'Baja']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['prioridad' => 'Alta']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea alta');
+    $response->assertDontSee('Tarea baja');
+});
+
+test('el listado se puede buscar por texto en el titulo o la descripcion', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Estudiar para el examen', 'descripcion' => 'Repasar apuntes']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Comprar víveres', 'descripcion' => 'Ir al mercado']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['buscar' => 'examen']));
+
+    $response->assertOk();
+    $response->assertSee('Estudiar para el examen');
+    $response->assertDontSee('Comprar víveres');
+});
+
+test('los filtros solo aplican sobre las tareas del usuario autenticado', function () {
+    $user = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea propia', 'estado' => 'Pendiente']);
+    Tarea::factory()->create(['user_id' => $otroUsuario->id, 'titulo' => 'Tarea ajena', 'estado' => 'Pendiente']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['estado' => 'Pendiente']));
+
+    $response->assertOk();
+    $response->assertSee('Tarea propia');
+    $response->assertDontSee('Tarea ajena');
+});
+
+test('el listado se puede ordenar por prioridad de mayor a menor', function () {
+    $user = User::factory()->create();
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea baja', 'prioridad' => 'Baja']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea alta', 'prioridad' => 'Alta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea media', 'prioridad' => 'Media']);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['orden' => 'prioridad']));
+
+    $response->assertOk();
+    $contenido = $response->getContent();
+
+    $posicionAlta = strpos($contenido, 'Tarea alta');
+    $posicionMedia = strpos($contenido, 'Tarea media');
+    $posicionBaja = strpos($contenido, 'Tarea baja');
+
+    expect($posicionAlta)->toBeLessThan($posicionMedia);
+    expect($posicionMedia)->toBeLessThan($posicionBaja);
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE PAPELERA DE RECICLAJE (V1.2)
+// -----------------------------------------------------------------
+
+test('al eliminar una tarea esta no se borra de la base de datos sino que se marca como eliminada', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+
+    $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
+
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+test('una tarea eliminada no aparece en el listado principal', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Organizar el armario']);
+
+    $this->actingAs($user)->delete(route('tareas.destroy', $tarea));
+
+    $response = $this->actingAs($user)->get(route('tareas.index'));
+
+    $response->assertOk();
+    $response->assertDontSee('Organizar el armario');
+});
+
+test('un usuario autenticado puede ver sus tareas eliminadas en la papelera', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Tarea en papelera']);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->get(route('tareas.papelera'));
+
+    $response->assertOk();
+    $response->assertSee('Tarea en papelera');
+});
+
+test('un usuario autenticado puede restaurar una tarea eliminada', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->patch(route('tareas.restaurar', $tarea->id));
+
+    $response->assertRedirect(route('tareas.papelera'));
+    $this->assertDatabaseHas('tareas', ['id' => $tarea->id, 'deleted_at' => null]);
+});
+
+test('un usuario autenticado puede eliminar una tarea de forma definitiva desde la papelera', function () {
+    $user = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($user)->delete(route('tareas.forzar', $tarea->id));
+
+    $response->assertRedirect(route('tareas.papelera'));
+    $this->assertDatabaseMissing('tareas', ['id' => $tarea->id]);
+});
+
+test('un usuario no puede restaurar la tarea eliminada de otro usuario', function () {
+    $propietario = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $propietario->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($otroUsuario)->patch(route('tareas.restaurar', $tarea->id));
+
+    $response->assertForbidden();
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+test('un usuario no puede eliminar de forma definitiva la tarea de otro usuario', function () {
+    $propietario = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $tarea = Tarea::factory()->create(['user_id' => $propietario->id]);
+    $tarea->delete();
+
+    $response = $this->actingAs($otroUsuario)->delete(route('tareas.forzar', $tarea->id));
+
+    $response->assertForbidden();
+    $this->assertSoftDeleted('tareas', ['id' => $tarea->id]);
+});
+
+// -----------------------------------------------------------------
+// PRUEBAS DE ETIQUETAS (V1.3)
+// -----------------------------------------------------------------
+
+test('al crear una tarea se le pueden asignar etiquetas', function () {
+    $user = User::factory()->create();
+    $etiqueta1 = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $etiqueta2 = Etiqueta::factory()->create(['user_id' => $user->id]);
+
+    $response = $this->actingAs($user)->post(route('tareas.store'), [
+        'titulo' => 'Tarea con etiquetas',
+        'estado' => 'Pendiente',
+        'prioridad' => 'Media',
+        'etiquetas' => [$etiqueta1->id, $etiqueta2->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea = Tarea::where('titulo', 'Tarea con etiquetas')->firstOrFail();
+    expect($tarea->etiquetas)->toHaveCount(2);
+});
+
+test('al actualizar una tarea se pueden cambiar las etiquetas asignadas', function () {
+    $user = User::factory()->create();
+    $etiquetaVieja = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $etiquetaNueva = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $tarea = Tarea::factory()->create(['user_id' => $user->id]);
+    $tarea->etiquetas()->sync([$etiquetaVieja->id]);
+
+    $response = $this->actingAs($user)->put(route('tareas.update', $tarea), [
+        'titulo' => $tarea->titulo,
+        'estado' => $tarea->estado,
+        'prioridad' => $tarea->prioridad,
+        'etiquetas' => [$etiquetaNueva->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea->refresh();
+    expect($tarea->etiquetas->pluck('id')->all())->toBe([$etiquetaNueva->id]);
+});
+
+test('no se pueden asignar a una tarea etiquetas de otro usuario', function () {
+    $user = User::factory()->create();
+    $otroUsuario = User::factory()->create();
+    $etiquetaAjena = Etiqueta::factory()->create(['user_id' => $otroUsuario->id]);
+
+    $response = $this->actingAs($user)->post(route('tareas.store'), [
+        'titulo' => 'Tarea sin etiquetas ajenas',
+        'estado' => 'Pendiente',
+        'prioridad' => 'Media',
+        'etiquetas' => [$etiquetaAjena->id],
+    ]);
+
+    $response->assertRedirect(route('tareas.index'));
+    $tarea = Tarea::where('titulo', 'Tarea sin etiquetas ajenas')->firstOrFail();
+    expect($tarea->etiquetas)->toHaveCount(0);
+});
+
+test('el listado se puede filtrar por etiqueta', function () {
+    $user = User::factory()->create();
+    $etiqueta = Etiqueta::factory()->create(['user_id' => $user->id]);
+    $tareaConEtiqueta = Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Con etiqueta']);
+    Tarea::factory()->create(['user_id' => $user->id, 'titulo' => 'Sin etiqueta']);
+    $tareaConEtiqueta->etiquetas()->sync([$etiqueta->id]);
+
+    $response = $this->actingAs($user)->get(route('tareas.index', ['etiqueta' => $etiqueta->id]));
+
+    $response->assertOk();
+    $response->assertSee('Con etiqueta');
+    $response->assertDontSee('Sin etiqueta');
 });
