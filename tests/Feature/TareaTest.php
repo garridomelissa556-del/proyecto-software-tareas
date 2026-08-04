@@ -160,7 +160,7 @@ test('un usuario no puede eliminar la tarea de otro usuario', function () {
     $this->assertDatabaseHas('tareas', ['id' => $tarea->id]);
 });
 
-test('un usuario autenticado puede ver el listado de sus tareas', function () {
+test('un usuario autenticado puede ver tareas con distintos estados en el listado', function () {
     $user = User::factory()->create();
     Tarea::factory()->create(['user_id' => $user->id, 'estado' => 'Pendiente']);
     Tarea::factory()->create(['user_id' => $user->id, 'estado' => 'En progreso']);
