@@ -195,8 +195,8 @@ return [
     */
 
     'custom' => [
-        'attribute-name' => [
-            'rule-name' => 'mensaje personalizado',
+        'email' => [
+            'ends_with' => 'El campo :attribute debe ser una cuenta de Gmail (@gmail.com).',
         ],
     ],
 
