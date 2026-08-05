@@ -141,8 +141,13 @@
                             <a href="{{ route('tareas.show', $tarea) }}" class="text-brand hover:text-brand-dark font-medium text-sm">Ver</a>
                             <a href="{{ route('tareas.edit', $tarea) }}" class="text-ink/60 hover:text-ink font-medium text-sm">Editar</a>
 
-                            <form action="{{ route('tareas.destroy', $tarea) }}" method="POST" class="form-eliminar">
-                            @csrf
+<form action="{{ route('tareas.destroy', $tarea) }}"
+      method="POST"
+      data-confirm
+      data-confirm-title="¿Mover esta tarea a la papelera?"
+      data-confirm-text="Podrás restaurarla posteriormente desde la papelera."
+      data-confirm-button="Sí, mover a papelera">
+                                  @csrf
                             @method('DELETE')
                             <button type="submit" class="text-coral hover:text-red-700 font-medium text-sm">
                                 Eliminar
@@ -174,41 +179,6 @@
 
         </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
 
-    document.querySelectorAll('.form-eliminar').forEach(form => {
-
-        form.addEventListener('submit', function(e) {
-
-            e.preventDefault();
-
-            Swal.fire({
-                title: '¿Deseas eliminar esta tarea?',
-                text: 'Esta acción no se puede deshacer.',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#6b7280',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar',
-                reverseButtons: true,
-                allowOutsideClick: false,
-                allowEscapeKey: true
-            }).then((result) => {
-
-                if (result.isConfirmed) {
-                    form.submit();
-                }
-
-            });
-
-        });
-
-    });
-
-});
-</script>
 </x-app-layout>

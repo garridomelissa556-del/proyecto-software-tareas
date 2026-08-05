@@ -76,11 +76,20 @@
                 <div class="flex justify-end gap-3 pt-4 border-t border-line">
                     <a href="{{ route('tareas.edit', $tarea) }}" class="px-4 py-2 bg-amber hover:brightness-95 text-white font-semibold rounded-lg">Editar</a>
 
-                    <form action="{{ route('tareas.destroy', $tarea) }}" method="POST" onsubmit="return confirm('¿Deseas eliminar esta tarea?')">
-                        @csrf
-                        @method('DELETE')
-                        <button class="px-4 py-2 bg-coral hover:brightness-95 text-white font-semibold rounded-lg">Eliminar</button>
-                    </form>
+                   <form action="{{ route('tareas.destroy', $tarea) }}"
+      method="POST"
+      data-confirm
+      data-confirm-title="¿Mover esta tarea a la papelera?"
+      data-confirm-text="La tarea no se perderá. Podrás restaurarla posteriormente desde la papelera."
+      data-confirm-button="Sí, mover a papelera">
+
+    @csrf
+    @method('DELETE')
+
+    <button class="px-4 py-2 bg-coral hover:brightness-95 text-white font-semibold rounded-lg">
+        Eliminar
+    </button>
+</form>
                 </div>
 
             </div>

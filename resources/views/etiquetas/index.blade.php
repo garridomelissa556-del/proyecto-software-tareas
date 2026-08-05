@@ -39,11 +39,20 @@
                         <div class="flex items-center gap-3">
                             <a href="{{ route('etiquetas.edit', $etiqueta) }}" class="text-ink/60 hover:text-ink font-medium text-sm">Editar</a>
 
-                            <form action="{{ route('etiquetas.destroy', $etiqueta) }}" method="POST" onsubmit="return confirm('¿Deseas eliminar esta etiqueta? Se quitará de todas las tareas.')">
-                                @csrf
-                                @method('DELETE')
-                                <button class="text-coral hover:text-red-700 font-medium text-sm">Eliminar</button>
-                            </form>
+                           <form action="{{ route('etiquetas.destroy', $etiqueta) }}"
+      method="POST"
+      data-confirm
+      data-confirm-title="¿Eliminar esta etiqueta?"
+      data-confirm-text="La etiqueta se quitará de todas las tareas, pero las tareas no serán eliminadas."
+      data-confirm-button="Sí, eliminar etiqueta">
+
+    @csrf
+    @method('DELETE')
+
+    <button class="text-coral hover:text-red-700 font-medium text-sm">
+        Eliminar
+    </button>
+</form>
                         </div>
                     </div>
 

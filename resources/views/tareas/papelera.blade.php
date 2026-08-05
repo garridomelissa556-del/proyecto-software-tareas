@@ -45,8 +45,12 @@
                                 <button class="text-brand hover:text-brand-dark font-medium text-sm">Restaurar</button>
                             </form>
 
-                            <form action="{{ route('tareas.forzar', $tarea->id) }}" method="POST"
-                                  onsubmit="return confirm('Esta acción eliminará la tarea de forma definitiva. ¿Continuar?')">
+                            <form action="{{ route('tareas.forzar', $tarea->id) }}"
+      method="POST"
+      data-confirm
+      data-confirm-title="¿Eliminar definitivamente?"
+      data-confirm-text="Esta tarea se borrará por completo y ya no podrás recuperarla."
+      data-confirm-button="Sí, eliminar para siempre">
                                 @csrf
                                 @method('DELETE')
                                 <button class="text-coral hover:text-red-700 font-medium text-sm">Eliminar definitivamente</button>
